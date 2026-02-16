@@ -4,6 +4,7 @@ import com.rbac.model.User;
 import com.rbac.model.Permission;
 import com.rbac.model.Role;
 import com.rbac.model.AssignmentMetadata;
+import com.rbac.model.AbstractRoleAssignment;
 
 public class Main {
     public static void main(String[] args) {
@@ -18,6 +19,9 @@ public class Main {
 
         System.out.println("\n4)Testing AssignmentMetadata\n");
         testAssignmentMetadata();
+
+        System.out.println("\n5)Testing AbstractRoleAssignment\n");
+        testAbstractRoleAssignment();
     }
 
     private static void testUserValidation() {
@@ -146,15 +150,15 @@ public class Main {
     private static void testAssignmentMetadata() {
         try {
             System.out.println("Creating metadata with reason:");
-            AssignmentMetadata metadata1 = AssignmentMetadata.now("admin", "Initial role assignment");
+            AssignmentMetadata metadata1 = AssignmentMetadata.now("jojo", "Initial role assignment");
             System.out.println(metadata1.format());
 
             System.out.println("\nCreating metadata without reason:");
-            AssignmentMetadata metadata2 = AssignmentMetadata.now("john_doe");
+            AssignmentMetadata metadata2 = AssignmentMetadata.now("jozev");
             System.out.println(metadata2.format());
 
             System.out.println("\nCreating metadata with specific date:");
-            AssignmentMetadata metadata3 = new AssignmentMetadata("manager", "2026-02-16 10:30:00", "Project access");
+            AssignmentMetadata metadata3 = new AssignmentMetadata("jojo", "2026-02-16 10:30:00", "Project access");
             System.out.println(metadata3.format());
 
             System.out.println("\nTesting hasReason method:");
@@ -171,11 +175,52 @@ public class Main {
 
             System.out.println("\nTesting validation - null assignedAt:");
             try {
-                AssignmentMetadata invalid = new AssignmentMetadata("admin", null, "Reason");
+                AssignmentMetadata invalid = new AssignmentMetadata("jojo", null, "Reason");
                 System.out.println("Should have failed: " + invalid.format());
             } catch (NullPointerException e) {
                 System.out.println("Caught null assignedAt: " + e.getMessage());
             }
+
+        } catch (Exception e) {
+            System.out.println("Error: " + e.getMessage());
+        }
+    }
+
+    private static void testAbstractRoleAssignment() {
+        try {
+            User user = User.validate("jojo", "jozev", "jojo@example.com");
+
+            Permission readUsers = new Permission("READ", "users", "Can view user list");
+            Role viewerRole = new Role("Viewer", "Read-only access");
+            viewerRole.addPermission(readUsers);
+
+            AssignmentMetadata metadata = AssignmentMetadata.now("jozev", "Test assignment");
+
+            System.out.println("Creating test implementation of AbstractRoleAssignment:");
+
+            AbstractRoleAssignment testAssignment = new AbstractRoleAssignment(user, viewerRole, metadata) {
+                @Override
+                public boolean isActive() {
+                    return true;
+                }
+
+                @Override
+                public String assignmentType() {
+                    return "TEST";
+                }
+            };
+
+            System.out.println("Assignment ID: " + testAssignment.assignmentId());
+            System.out.println("User: " + testAssignment.user().username());
+            System.out.println("Role: " + testAssignment.role().getName());
+            System.out.println("Type: " + testAssignment.assignmentType());
+            System.out.println("Active: " + testAssignment.isActive());
+
+            System.out.println("\nSummary:");
+            System.out.println(testAssignment.summary());
+
+            System.out.println("\nToString:");
+            System.out.println(testAssignment);
 
         } catch (Exception e) {
             System.out.println("Error: " + e.getMessage());
