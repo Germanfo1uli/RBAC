@@ -4,7 +4,7 @@ import com.rbac.model.User;
 import com.rbac.model.Permission;
 import com.rbac.model.Role;
 import com.rbac.model.AssignmentMetadata;
-import com.rbac.model.AbstractRoleAssignment;
+import com.rbac.model.PermanentAssignment;
 
 public class Main {
     public static void main(String[] args) {
@@ -20,8 +20,8 @@ public class Main {
         System.out.println("\n4)Testing AssignmentMetadata\n");
         testAssignmentMetadata();
 
-        System.out.println("\n5)Testing AbstractRoleAssignment\n");
-        testAbstractRoleAssignment();
+        System.out.println("\n5)Testing PermanentAssignment\n");
+        testPermanentAssignment();
     }
 
     private static void testUserValidation() {
@@ -186,41 +186,42 @@ public class Main {
         }
     }
 
-    private static void testAbstractRoleAssignment() {
+    private static void testPermanentAssignment() {
         try {
             User user = User.validate("jojo", "jozev", "jojo@example.com");
 
             Permission readUsers = new Permission("READ", "users", "Can view user list");
-            Role viewerRole = new Role("Viewer", "Read-only access");
-            viewerRole.addPermission(readUsers);
+            Permission writeUsers = new Permission("WRITE", "users", "Can create and edit users");
 
-            AssignmentMetadata metadata = AssignmentMetadata.now("jozev", "Test assignment");
+            Role adminRole = new Role("Administrator", "Full system access");
+            adminRole.addPermission(readUsers);
+            adminRole.addPermission(writeUsers);
 
-            System.out.println("Creating test implementation of AbstractRoleAssignment:");
+            AssignmentMetadata metadata = AssignmentMetadata.now("jozev", "Permanent admin access");
 
-            AbstractRoleAssignment testAssignment = new AbstractRoleAssignment(user, viewerRole, metadata) {
-                @Override
-                public boolean isActive() {
-                    return true;
-                }
+            System.out.println("1. Creating PermanentAssignment:");
+            PermanentAssignment assignment = new PermanentAssignment(user, adminRole, metadata);
+            System.out.println("Assignment ID: " + assignment.assignmentId());
+            System.out.println("Type: " + assignment.assignmentType());
+            System.out.println("Active: " + assignment.isActive());
+            System.out.println("Revoked: " + assignment.isRevoked());
 
-                @Override
-                public String assignmentType() {
-                    return "TEST";
-                }
-            };
+            System.out.println("\n2. Testing summary():");
+            System.out.println(assignment.summary());
 
-            System.out.println("Assignment ID: " + testAssignment.assignmentId());
-            System.out.println("User: " + testAssignment.user().username());
-            System.out.println("Role: " + testAssignment.role().getName());
-            System.out.println("Type: " + testAssignment.assignmentType());
-            System.out.println("Active: " + testAssignment.isActive());
+            System.out.println("\n3. Testing revoke():");
+            assignment.revoke();
+            System.out.println("After revoke - Active: " + assignment.isActive());
+            System.out.println("After revoke - Revoked: " + assignment.isRevoked());
 
-            System.out.println("\nSummary:");
-            System.out.println(testAssignment.summary());
+            System.out.println("\n4. Testing summary after revoke:");
+            System.out.println(assignment.summary());
 
-            System.out.println("\nToString:");
-            System.out.println(testAssignment);
+            System.out.println("\n5. Testing constructor with existing ID:");
+            PermanentAssignment existingAssignment = new PermanentAssignment(
+                    assignment.assignmentId(), user, adminRole, metadata, true);
+            System.out.println("Same ID? " + assignment.equals(existingAssignment));
+            System.out.println("Active: " + existingAssignment.isActive());
 
         } catch (Exception e) {
             System.out.println("Error: " + e.getMessage());
