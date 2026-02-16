@@ -3,6 +3,7 @@ package org.example;
 import com.rbac.model.User;
 import com.rbac.model.Permission;
 import com.rbac.model.Role;
+import com.rbac.model.AssignmentMetadata;
 
 public class Main {
     public static void main(String[] args) {
@@ -14,6 +15,9 @@ public class Main {
 
         System.out.println("\n3)Testing Role\n");
         testRole();
+
+        System.out.println("\n4)Testing AssignmentMetadata\n");
+        testAssignmentMetadata();
     }
 
     private static void testUserValidation() {
@@ -135,6 +139,45 @@ public class Main {
             System.out.println(adminRole);
 
         } catch (IllegalArgumentException e) {
+            System.out.println("Error: " + e.getMessage());
+        }
+    }
+
+    private static void testAssignmentMetadata() {
+        try {
+            System.out.println("Creating metadata with reason:");
+            AssignmentMetadata metadata1 = AssignmentMetadata.now("admin", "Initial role assignment");
+            System.out.println(metadata1.format());
+
+            System.out.println("\nCreating metadata without reason:");
+            AssignmentMetadata metadata2 = AssignmentMetadata.now("john_doe");
+            System.out.println(metadata2.format());
+
+            System.out.println("\nCreating metadata with specific date:");
+            AssignmentMetadata metadata3 = new AssignmentMetadata("manager", "2026-02-16 10:30:00", "Project access");
+            System.out.println(metadata3.format());
+
+            System.out.println("\nTesting hasReason method:");
+            System.out.println("Metadata1 has reason? " + metadata1.hasReason());
+            System.out.println("Metadata2 has reason? " + metadata2.hasReason());
+
+            System.out.println("\nTesting validation - empty assignedBy:");
+            try {
+                AssignmentMetadata invalid = new AssignmentMetadata("", "2026-02-16 10:30:00", "Reason");
+                System.out.println("Should have failed: " + invalid.format());
+            } catch (IllegalArgumentException e) {
+                System.out.println("Caught empty assignedBy: " + e.getMessage());
+            }
+
+            System.out.println("\nTesting validation - null assignedAt:");
+            try {
+                AssignmentMetadata invalid = new AssignmentMetadata("admin", null, "Reason");
+                System.out.println("Should have failed: " + invalid.format());
+            } catch (NullPointerException e) {
+                System.out.println("Caught null assignedAt: " + e.getMessage());
+            }
+
+        } catch (Exception e) {
             System.out.println("Error: " + e.getMessage());
         }
     }
