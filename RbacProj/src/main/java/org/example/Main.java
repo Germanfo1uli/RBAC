@@ -5,6 +5,9 @@ import com.rbac.model.Permission;
 import com.rbac.model.Role;
 import com.rbac.model.AssignmentMetadata;
 import com.rbac.model.PermanentAssignment;
+import com.rbac.model.TemporaryAssignment;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 public class Main {
     public static void main(String[] args) {
@@ -22,6 +25,9 @@ public class Main {
 
         System.out.println("\n5)Testing PermanentAssignment\n");
         testPermanentAssignment();
+
+        System.out.println("\n6)Testing TemporaryAssignment\n");
+        testTemporaryAssignment();
     }
 
     private static void testUserValidation() {
@@ -222,6 +228,67 @@ public class Main {
                     assignment.assignmentId(), user, adminRole, metadata, true);
             System.out.println("Same ID? " + assignment.equals(existingAssignment));
             System.out.println("Active: " + existingAssignment.isActive());
+
+        } catch (Exception e) {
+            System.out.println("Error: " + e.getMessage());
+        }
+    }
+
+    private static void testTemporaryAssignment() {
+        try {
+            User user = User.validate("jojo", "jozev", "jojo@example.com");
+
+            Permission readUsers = new Permission("READ", "users", "Can view user list");
+
+            Role viewerRole = new Role("Viewer", "Read-only access");
+            viewerRole.addPermission(readUsers);
+
+            AssignmentMetadata metadata = AssignmentMetadata.now("jozev", "Temporary project access");
+
+            LocalDateTime now = LocalDateTime.now();
+            LocalDateTime futureDate = now.plusDays(7);
+            String expiresAt = futureDate.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"));
+
+            System.out.println("1. Creating TemporaryAssignment (expires in 7 days):");
+            TemporaryAssignment assignment = new TemporaryAssignment(user, viewerRole, metadata, expiresAt, true);
+            System.out.println("Assignment ID: " + assignment.assignmentId());
+            System.out.println("Type: " + assignment.assignmentType());
+            System.out.println("Expires: " + assignment.getExpiresAt());
+            System.out.println("Auto-renew: " + assignment.isAutoRenew());
+
+            System.out.println("\n2. Testing isActive() with current time:");
+            System.out.println("Active now: " + assignment.isActive(now));
+
+            System.out.println("\n3. Testing getTimeRemaining():");
+            System.out.println("Time remaining: " + assignment.getTimeRemaining(now));
+
+            System.out.println("\n4. Testing summary():");
+            System.out.println(assignment.summary());
+
+            System.out.println("\n5. Testing isExpired() with future date:");
+            LocalDateTime expiredDate = futureDate.plusDays(1);
+            System.out.println("Active on " + expiredDate.format(DateTimeFormatter.ofPattern("yyyy-MM-dd")) +
+                    ": " + assignment.isActive(expiredDate));
+
+            System.out.println("\n6. Testing extend():");
+            LocalDateTime extendedDate = now.plusDays(14);
+            String newExpiresAt = extendedDate.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"));
+            assignment.extend(newExpiresAt);
+            System.out.println("New expiration: " + assignment.getExpiresAt());
+            System.out.println("Time remaining now: " + assignment.getTimeRemaining(now));
+
+            System.out.println("\n7. Testing auto-renew toggle:");
+            assignment.setAutoRenew(false);
+            System.out.println("Auto-renew now: " + assignment.isAutoRenew());
+
+            System.out.println("\n8. Testing expired assignment:");
+            LocalDateTime pastDate = now.minusDays(1);
+            String expiredExpiresAt = pastDate.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"));
+            TemporaryAssignment expiredAssignment = new TemporaryAssignment(
+                    user, viewerRole, metadata, expiredExpiresAt, false);
+            System.out.println("Is expired: " + expiredAssignment.isExpired(now));
+            System.out.println("Is active: " + expiredAssignment.isActive(now));
+            System.out.println("Time remaining: " + expiredAssignment.getTimeRemaining(now));
 
         } catch (Exception e) {
             System.out.println("Error: " + e.getMessage());
