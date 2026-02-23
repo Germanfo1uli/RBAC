@@ -1,4 +1,4 @@
-package com.rbac.filter;
+package com.rbac.filter.role;
 
 import com.rbac.model.Role;
 

@@ -1,6 +1,4 @@
-package com.rbac.filter;
-
-import com.rbac.model.User;
+package com.rbac.filter.user;
 
 public class UserFilters {
 

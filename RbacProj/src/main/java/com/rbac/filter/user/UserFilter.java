@@ -1,4 +1,4 @@
-package com.rbac.filter;
+package com.rbac.filter.user;
 
 import com.rbac.model.User;
 

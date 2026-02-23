@@ -1,7 +1,6 @@
-package com.rbac.filter;
+package com.rbac.filter.role;
 
 import com.rbac.model.Permission;
-import com.rbac.model.Role;
 
 public class RoleFilters {
 
