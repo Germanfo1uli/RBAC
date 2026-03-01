@@ -102,4 +102,5 @@ public class RoleManager implements Repository<Role> {
                 .filter(role -> role.hasPermission(permissionName, resource))
                 .collect(Collectors.toList());
     }
+
 }
