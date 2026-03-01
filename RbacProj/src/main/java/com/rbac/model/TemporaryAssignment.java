@@ -6,7 +6,7 @@ import java.time.temporal.ChronoUnit;
 
 public class TemporaryAssignment extends AbstractRoleAssignment {
 
-    private static final DateTimeFormatter FORMATTER =
+    static final DateTimeFormatter FORMATTER =
             DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
     private String expiresAt;
