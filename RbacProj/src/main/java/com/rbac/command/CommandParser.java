@@ -55,7 +55,6 @@ public class CommandParser {
         System.out.println("\nAvailable commands:");
         System.out.println("--------------------------------------------------");
 
-
         commandDescriptions.entrySet().stream()
                 .sorted(Map.Entry.comparingByKey())
                 .forEach(entry -> {
@@ -70,13 +69,17 @@ public class CommandParser {
     }
 
     public void parseAndExecute(String input, Scanner scanner, RBACSystem system) {
-        if (input == null || input.trim().isEmpty()) {
+        if (input == null) {
+            System.out.println("No command entered.");
             return;
         }
 
         String trimmedInput = input.trim();
-        String[] parts = trimmedInput.split("\\s+", 2);
+        if (trimmedInput.isEmpty()) {
+            return;
+        }
 
+        String[] parts = trimmedInput.split("\\s+", 2);
         String commandName = parts[0];
 
         executeCommand(commandName, scanner, system);
