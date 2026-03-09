@@ -35,7 +35,7 @@ class ReportGeneratorTest {
     @Test
     void testGenerateUserReport() {
         User user = new User("admin", "Admin User", "admin@rbac.com");
-        Role role = new Role("SuperAdmin", "Full access");
+        Role role = new Role("SUPERADMIN", "Full access");
         RoleAssignment assignment = mock(RoleAssignment.class);
 
         when(userManager.findAll()).thenReturn(List.of(user));
@@ -46,12 +46,12 @@ class ReportGeneratorTest {
         String report = reportGenerator.generateUserReport(userManager, assignmentManager);
 
         assertTrue(report.contains("admin"));
-        assertTrue(report.contains("SuperAdmin"));
+        assertTrue(report.contains("SUPERADMIN"));
     }
 
     @Test
     void testGenerateRoleReport() {
-        Role role = new Role("Manager", "Managerial role");
+        Role role = new Role("MANAGER", "Managerial role");
         RoleAssignment assignment = mock(RoleAssignment.class);
 
         when(roleManager.findAll()).thenReturn(List.of(role));
@@ -60,14 +60,14 @@ class ReportGeneratorTest {
 
         String report = reportGenerator.generateRoleReport(roleManager, assignmentManager);
 
-        assertTrue(report.contains("Manager"));
+        assertTrue(report.contains("MANAGER"));
         assertTrue(report.contains("1"));
     }
 
     @Test
     void testGeneratePermissionMatrix() {
         User user = new User("tester", "Test User", "test@rbac.com");
-        Permission perm = new Permission("P1", "reports", "Read reports");
+        Permission perm = new Permission("READ", "reports", "Read access");
 
         when(userManager.findAll()).thenReturn(List.of(user));
         when(assignmentManager.getUserPermissions(user)).thenReturn(Set.of(perm));
@@ -75,7 +75,7 @@ class ReportGeneratorTest {
         String report = reportGenerator.generatePermissionMatrix(userManager, assignmentManager);
 
         assertTrue(report.contains("tester"));
-        assertTrue(report.contains("P1"));
+        assertTrue(report.contains("READ"));
         assertTrue(report.contains("reports"));
     }
 
