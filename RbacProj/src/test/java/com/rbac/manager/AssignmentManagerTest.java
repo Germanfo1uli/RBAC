@@ -59,4 +59,40 @@ class AssignmentManagerTest {
         assertThat(manager.userHasRole(user, roleA)).isFalse();
         assertThat(manager.getActiveAssignments()).isEmpty();
     }
+
+    @Test
+    void shouldPreventDuplicateActiveAssignmentForSameRole() {
+        AssignmentMetadata meta = AssignmentMetadata.now("admin");
+        manager.add(new PermanentAssignment(user, roleA, meta));
+
+        assertThatThrownBy(() -> manager.add(new PermanentAssignment(user, roleA, meta)))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("already has an active assignment");
+    }
+
+    @Test
+    void shouldRevokeTemporaryAssignmentByRemoval() {
+        AssignmentMetadata meta = AssignmentMetadata.now("admin");
+        TemporaryAssignment temp = new TemporaryAssignment(
+                user, roleA, meta, "2099-01-01 10:00", false);
+        manager.add(temp);
+
+        manager.revokeAssignment(temp.assignmentId());
+
+        assertThat(manager.findById(temp.assignmentId())).isEmpty();
+        assertThat(manager.getActiveAssignments()).isEmpty();
+    }
+
+    @Test
+    void shouldExtendTemporaryAssignment() {
+        AssignmentMetadata meta = AssignmentMetadata.now("admin");
+        TemporaryAssignment temp = new TemporaryAssignment(
+                user, roleA, meta, "2099-01-01 10:00", false);
+        manager.add(temp);
+
+        manager.extendTemporaryAssignment(temp.assignmentId(), "2099-02-01 12:00");
+
+        TemporaryAssignment updated = (TemporaryAssignment) manager.findById(temp.assignmentId()).orElseThrow();
+        assertThat(updated.getExpiresAt()).isEqualTo("2099-02-01 12:00");
+    }
 }

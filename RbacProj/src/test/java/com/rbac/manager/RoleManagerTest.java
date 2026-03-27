@@ -1,7 +1,10 @@
 package com.rbac.manager;
 
+import com.rbac.model.AssignmentMetadata;
 import com.rbac.model.Permission;
+import com.rbac.model.PermanentAssignment;
 import com.rbac.model.Role;
+import com.rbac.model.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -40,5 +43,19 @@ class RoleManagerTest {
         manager.removePermissionFromRole("Editor", p);
 
         assertThat(manager.findByName("Editor").orElseThrow().getPermissions()).doesNotContain(p);
+    }
+
+    @Test
+    void shouldNotRemoveRoleWhenAssigned() {
+        Role r = new Role("Admin", "Full access");
+        manager.add(r);
+
+        AssignmentMetadata meta = AssignmentMetadata.now("system");
+        User user = User.validate("bob", "Bob", "bob@ex.com");
+        assignmentManager.add(new PermanentAssignment(user, r, meta));
+
+        assertThatThrownBy(() -> manager.remove(r))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("currently assigned");
     }
 }
