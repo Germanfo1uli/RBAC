@@ -20,17 +20,21 @@ public class ReportGenerator {
         sb.append(String.format("%-15s | %-25s | %s\n", "Username", "Full Name", "Active Roles"));
         sb.append("-".repeat(70)).append("\n");
 
-        for (User user : userManager.findAll()) {
-            List<RoleAssignment> userAssignments = assignmentManager.findByUser(user);
+        String userLines = userManager.findAll().parallelStream()
+                .map(user -> {
+                    List<RoleAssignment> userAssignments = assignmentManager.findByUser(user);
 
-            String rolesList = userAssignments.stream()
-                    .filter(RoleAssignment::isActive)
-                    .map(a -> a.role().getName())
-                    .collect(Collectors.joining(", "));
+                    String rolesList = userAssignments.stream()
+                            .filter(RoleAssignment::isActive)
+                            .map(a -> a.role().getName())
+                            .collect(Collectors.joining(", "));
 
-            sb.append(String.format("%-15s | %-25s | %s\n",
-                    user.username(), user.fullName(), rolesList.isEmpty() ? "None" : rolesList));
-        }
+                    return String.format("%-15s | %-25s | %s\n",
+                            user.username(), user.fullName(), rolesList.isEmpty() ? "None" : rolesList);
+                })
+                .collect(Collectors.joining(""));
+
+        sb.append(userLines);
         return sb.toString();
     }
 
@@ -55,19 +59,26 @@ public class ReportGenerator {
         StringBuilder sb = new StringBuilder();
         sb.append("=== PERMISSION MATRIX ===\n");
 
-        for (User user : userManager.findAll()) {
-            sb.append("\nUser: ").append(user.username()).append("\n");
+        String userSections = userManager.findAll().parallelStream()
+                .map(user -> {
+                    StringBuilder userBlock = new StringBuilder();
+                    userBlock.append("\nUser: ").append(user.username()).append("\n");
 
-            Set<Permission> permissions = assignmentManager.getUserPermissions(user);
+                    Set<Permission> permissions = assignmentManager.getUserPermissions(user);
 
-            if (permissions.isEmpty()) {
-                sb.append("  [No Active Permissions]\n");
-            } else {
-                for (Permission p : permissions) {
-                    sb.append(String.format("  - [%s] on %s\n", p.name(), p.resource()));
-                }
-            }
-        }
+                    if (permissions.isEmpty()) {
+                        userBlock.append("  [No Active Permissions]\n");
+                    } else {
+                        for (Permission p : permissions) {
+                            userBlock.append(String.format("  - [%s] on %s\n", p.name(), p.resource()));
+                        }
+                    }
+
+                    return userBlock.toString();
+                })
+                .collect(Collectors.joining(""));
+
+        sb.append(userSections);
         return sb.toString();
     }
 

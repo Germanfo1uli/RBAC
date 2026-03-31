@@ -50,6 +50,21 @@ class ReportGeneratorTest {
     }
 
     @Test
+    void testGenerateUserReportShowsNoneWhenNoActiveRoles() {
+        User user = new User("guest", "Guest User", "guest@rbac.com");
+        RoleAssignment assignment = mock(RoleAssignment.class);
+
+        when(userManager.findAll()).thenReturn(List.of(user));
+        when(assignmentManager.findByUser(user)).thenReturn(List.of(assignment));
+        when(assignment.isActive()).thenReturn(false);
+
+        String report = reportGenerator.generateUserReport(userManager, assignmentManager);
+
+        assertTrue(report.contains("guest"));
+        assertTrue(report.contains("None"));
+    }
+
+    @Test
     void testGenerateRoleReport() {
         Role role = new Role("MANAGER", "Managerial role");
         RoleAssignment assignment = mock(RoleAssignment.class);
@@ -77,6 +92,19 @@ class ReportGeneratorTest {
         assertTrue(report.contains("tester"));
         assertTrue(report.contains("READ"));
         assertTrue(report.contains("reports"));
+    }
+
+    @Test
+    void testGeneratePermissionMatrixNoPermissions() {
+        User user = new User("noperms", "No Perms", "noperms@rbac.com");
+
+        when(userManager.findAll()).thenReturn(List.of(user));
+        when(assignmentManager.getUserPermissions(user)).thenReturn(Set.of());
+
+        String report = reportGenerator.generatePermissionMatrix(userManager, assignmentManager);
+
+        assertTrue(report.contains("noperms"));
+        assertTrue(report.contains("[No Active Permissions]"));
     }
 
     @Test
