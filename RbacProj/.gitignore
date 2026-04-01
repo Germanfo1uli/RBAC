@@ -1,7 +1,3 @@
-<<<<<<< HEAD
-.idea/
-||||||| 46dc942
-=======
 .gradle
 build/
 !gradle/wrapper/gradle-wrapper.jar
@@ -45,4 +41,3 @@ bin/
 
 ### Mac OS ###
 .DS_Store
->>>>>>> feature/bds
