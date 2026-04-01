@@ -2,8 +2,12 @@ package com.rbac.system;
 
 import com.rbac.model.Role;
 import com.rbac.model.User;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.*;
 
@@ -15,6 +19,11 @@ class RBACSystemTest {
     void setUp() {
         system = new RBACSystem();
         system.initialize();
+    }
+
+    @AfterEach
+    void tearDown() {
+        system.getBackgroundExecutor().shutdown();
     }
 
     @Test
@@ -53,5 +62,14 @@ class RBACSystemTest {
 
         system.setCurrentUser(null);
         assertThat(system.getCurrentUser()).isNull();
+    }
+
+    @Test
+    void backgroundExecutor_shouldRunTasks() throws Exception {
+        CountDownLatch latch = new CountDownLatch(1);
+
+        system.getBackgroundExecutor().submit(latch::countDown);
+
+        assertThat(latch.await(1, TimeUnit.SECONDS)).isTrue();
     }
 }

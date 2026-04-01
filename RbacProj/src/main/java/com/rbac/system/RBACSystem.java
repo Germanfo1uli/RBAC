@@ -14,6 +14,7 @@ public class RBACSystem {
     private final UserManager userManager;
     private final RoleManager roleManager;
     private final AssignmentManager assignmentManager;
+    private final BackgroundExecutor backgroundExecutor;
 
     private String currentUser;
 
@@ -21,6 +22,7 @@ public class RBACSystem {
         this.assignmentManager = new AssignmentManager();
         this.roleManager = new RoleManager(this.assignmentManager);
         this.userManager = new UserManager();
+        this.backgroundExecutor = new BackgroundExecutor();
         this.currentUser = null;
     }
 
@@ -34,6 +36,10 @@ public class RBACSystem {
 
     public AssignmentManager getAssignmentManager() {
         return assignmentManager;
+    }
+
+    public BackgroundExecutor getBackgroundExecutor() {
+        return backgroundExecutor;
     }
 
     public String getCurrentUser() {
