@@ -23,7 +23,7 @@ class RBACSystemTest {
 
     @AfterEach
     void tearDown() {
-        system.getBackgroundExecutor().shutdown();
+        system.shutdown();
     }
 
     @Test

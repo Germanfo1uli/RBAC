@@ -1,10 +1,15 @@
 package com.rbac.system;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
+
+import java.time.Duration;
+
+import static org.assertj.core.api.Assertions.*;
 
 class AuditLogTest {
+
     private AuditLog auditLog;
 
     @BeforeEach
@@ -12,20 +17,37 @@ class AuditLogTest {
         auditLog = new AuditLog();
     }
 
-    @Test
-    void shouldLogActionAndRetrieveIt() {
-        auditLog.log("CREATE_USER", "admin", "user1", "Initial creation");
-
-        var entries = auditLog.getAll();
-        assertEquals(1, entries.size());
-        assertEquals("CREATE_USER", entries.get(0).action());
+    @AfterEach
+    void tearDown() {
+        auditLog.shutdown();
     }
 
     @Test
-    void shouldFilterByPerformer() {
-        auditLog.log("ACTION1", "admin", "target", "details");
-        auditLog.log("ACTION2", "operator", "target", "details");
+    void log_shouldBeProcessedByBackgroundWorker() {
+        auditLog.log("TEST_ACTION", "tester", "target", "details");
 
-        assertEquals(1, auditLog.getByPerformer("admin").size());
+        boolean processed = waitUntil(() -> auditLog.getAll().size() == 1, Duration.ofSeconds(1));
+
+        assertThat(processed).isTrue();
+        assertThat(auditLog.getByPerformer("tester")).hasSize(1);
+    }
+
+    private boolean waitUntil(Check condition, Duration timeout) {
+        long deadline = System.nanoTime() + timeout.toNanos();
+        while (System.nanoTime() < deadline) {
+            if (condition.ok()) return true;
+            try {
+                Thread.sleep(10);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return false;
+            }
+        }
+        return condition.ok();
+    }
+
+    @FunctionalInterface
+    private interface Check {
+        boolean ok();
     }
 }

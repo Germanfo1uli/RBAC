@@ -3,6 +3,7 @@ package com.rbac.command;
 import com.rbac.filter.user.UserFilter;
 import com.rbac.filter.user.UserFilters;
 import com.rbac.model.*;
+import com.rbac.report.ReportGenerator;
 import com.rbac.system.RBACSystem;
 
 import java.time.LocalDateTime;
@@ -522,6 +523,36 @@ public class CommandRegistry {
 
         parser.registerCommand("stats", "Show system statistics", (sc, sys) -> {
             System.out.println(sys.generateStatistics());
+        });
+
+        parser.registerCommand("report-users-async", "Generate user report in background", (sc, sys) -> {
+            ReportGenerator generator = new ReportGenerator();
+            String performer = sys.getCurrentUser() != null ? sys.getCurrentUser() : "system";
+
+            sys.getBackgroundExecutor().submit(() -> {
+                String report = generator.generateUserReport(sys.getUserManager(), sys.getAssignmentManager());
+                System.out.println(report);
+                sys.getAuditLog().log("REPORT_USERS_ASYNC", performer, "users", "User report generated in background");
+            });
+
+            System.out.println("User report generation started in background.");
+        });
+
+        parser.registerCommand("save-async", "Save audit log to file in background", (sc, sys) -> {
+            System.out.print("Enter filename: ");
+            String filename = sc.nextLine().trim();
+            if (filename.isEmpty()) {
+                System.out.println("Filename cannot be empty.");
+                return;
+            }
+
+            String performer = sys.getCurrentUser() != null ? sys.getCurrentUser() : "system";
+            sys.getBackgroundExecutor().submit(() -> {
+                sys.getAuditLog().saveToFile(filename);
+                sys.getAuditLog().log("SAVE_ASYNC", performer, filename, "Audit log saved in background");
+            });
+
+            System.out.println("Save started in background.");
         });
 
         parser.registerCommand("clear", "Clear screen", (sc, sys) -> {
