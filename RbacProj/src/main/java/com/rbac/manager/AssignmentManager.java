@@ -160,4 +160,16 @@ public class AssignmentManager implements Repository<RoleAssignment> {
             temporary.extend(newExpirationDate);
         }
     }
+
+    public int cleanupExpiredTemporaryAssignments() {
+        synchronized (lock) {
+            List<String> expiredIds = assignments.values().stream()
+                    .filter(a -> a instanceof TemporaryAssignment temp && temp.isExpired())
+                    .map(RoleAssignment::assignmentId)
+                    .collect(Collectors.toList());
+
+            expiredIds.forEach(assignments::remove);
+            return expiredIds.size();
+        }
+    }
 }

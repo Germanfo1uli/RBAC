@@ -8,6 +8,9 @@ import com.rbac.model.Permission;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 public class RBACSystem {
 
@@ -16,6 +19,7 @@ public class RBACSystem {
     private final AssignmentManager assignmentManager;
     private final BackgroundExecutor backgroundExecutor;
     private final AuditLog auditLog;
+    private final ScheduledExecutorService scheduler;
 
     private String currentUser;
 
@@ -25,6 +29,11 @@ public class RBACSystem {
         this.userManager = new UserManager();
         this.backgroundExecutor = new BackgroundExecutor();
         this.auditLog = new AuditLog();
+        this.scheduler = Executors.newSingleThreadScheduledExecutor(r -> {
+            Thread t = new Thread(r, "RBAC-Expiration-Scheduler");
+            t.setDaemon(true);
+            return t;
+        });
         this.currentUser = null;
     }
 
@@ -48,9 +57,33 @@ public class RBACSystem {
         return auditLog;
     }
 
+    public void startPeriodicTasks() {
+        scheduler.scheduleAtFixedRate(this::runExpirationTask, 10, 30, TimeUnit.SECONDS);
+    }
+
+    private void runExpirationTask() {
+        try {
+            int cleanedCount = assignmentManager.cleanupExpiredTemporaryAssignments();
+            String stats = generateStatistics();
+            auditLog.log("PERIODIC_EXPIRATION", "system", "assignments",
+                    String.format("Cleaned %d expired temporary assignments. %s", cleanedCount, stats));
+        } catch (Exception e) {
+            auditLog.log("PERIODIC_ERROR", "system", "assignments", "Expiration task failed: " + e.getMessage());
+        }
+    }
+
     public void shutdown() {
         backgroundExecutor.shutdown();
         auditLog.shutdown();
+        scheduler.shutdown();
+        try {
+            if (!scheduler.awaitTermination(2, TimeUnit.SECONDS)) {
+                scheduler.shutdownNow();
+            }
+        } catch (InterruptedException e) {
+            scheduler.shutdownNow();
+            Thread.currentThread().interrupt();
+        }
     }
 
     public String getCurrentUser() {
@@ -112,6 +145,7 @@ public class RBACSystem {
         assignmentManager.add(adminAssignment);
 
         setCurrentUser("admin");
+        startPeriodicTasks();
     }
 
     public String generateStatistics() {
